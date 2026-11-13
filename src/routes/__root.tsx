@@ -7,8 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TooltipProvider } from "#/components/ui/tooltip";
-
-import { getLocale } from "#/paraglide/runtime";
+import { APP_LOCALE } from "#/constants/locale";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -17,14 +16,6 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-	beforeLoad: async () => {
-		// Other redirect strategies are possible; see
-		// https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
-		if (typeof document !== "undefined") {
-			document.documentElement.setAttribute("lang", getLocale());
-		}
-	},
-
 	head: () => ({
 		meta: [
 			{
@@ -50,7 +41,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang={getLocale()}>
+		<html lang={APP_LOCALE}>
 			<head>
 				<HeadContent />
 			</head>

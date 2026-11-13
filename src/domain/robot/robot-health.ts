@@ -37,17 +37,14 @@ export function getAttentionReasons(
 	robot: Robot,
 	now: Date,
 ): AttentionReason[] {
-  const status = getEffectiveStatus(robot, now);
-  const battery = getBatteryLevel(robot.battery);
+	const status = getEffectiveStatus(robot, now);
+	const battery = getBatteryLevel(robot.battery);
 	const reasons: AttentionReason[] = [];
 
 	if (status === "error") reasons.push("error");
 	if (status === "offline") reasons.push("offline");
 	// A critical robot that is already charging is being handled.
-	if (
-		battery === "critical" &&
-		robot.reportedStatus !== "charging"
-	) {
+	if (battery === "critical" && robot.reportedStatus !== "charging") {
 		reasons.push("battery-critical");
 	}
 
