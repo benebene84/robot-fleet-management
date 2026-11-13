@@ -12,9 +12,10 @@ type RobotFixture = {
 	battery_pct: number | null;
 	/** Fixed pose, or null to simulate driving a loop. */
 	pose: { x_m: number; y_m: number; heading_deg: number } | null;
-	/** How long ago the robot last reported. */
-	last_seen_ago_ms: number;
+	/** Set for a robot that went silent this long before the backend started. */
+	stopped_reporting_ago_ms?: number;
 	events: {
+		/** How long before the backend started the event happened. */
 		ago_ms: number;
 		level: "info" | "warn" | "error";
 		message: string;
@@ -23,6 +24,11 @@ type RobotFixture = {
 
 const SECOND = 1_000;
 const MINUTE = 60 * SECOND;
+const REPORT_LAG_MS = 500;
+
+// Past events happened at a fixed point in time, so they have to be anchored rather than
+// computed relative to each request, otherwise they would never age.
+const STARTED_AT = Date.now();
 
 const MUNICH = { id: "site-muc", name: "Munich Warehouse" };
 const HAMBURG = { id: "site-ham", name: "Hamburg Port Depot" };
@@ -36,7 +42,6 @@ const ROBOTS: RobotFixture[] = [
 		status: "active",
 		battery_pct: null,
 		pose: null,
-		last_seen_ago_ms: 400,
 		events: [
 			{
 				ago_ms: 2 * MINUTE,
@@ -54,7 +59,6 @@ const ROBOTS: RobotFixture[] = [
 		status: "charging",
 		battery_pct: 8,
 		pose: { x_m: 2, y_m: 1.5, heading_deg: 90 },
-		last_seen_ago_ms: 700,
 		events: [
 			{
 				ago_ms: 4 * MINUTE,
@@ -76,7 +80,6 @@ const ROBOTS: RobotFixture[] = [
 		status: "error",
 		battery_pct: 64,
 		pose: { x_m: 41.2, y_m: 17.8, heading_deg: 210 },
-		last_seen_ago_ms: 900,
 		events: [
 			{
 				ago_ms: 45 * SECOND,
@@ -103,7 +106,7 @@ const ROBOTS: RobotFixture[] = [
 		status: "active",
 		battery_pct: 37,
 		pose: { x_m: 12.4, y_m: 30.1, heading_deg: 0 },
-		last_seen_ago_ms: 7 * MINUTE,
+		stopped_reporting_ago_ms: 7 * MINUTE,
 		events: [
 			{ ago_ms: 7 * MINUTE, level: "warn", message: "Wi-Fi signal weak" },
 		],
@@ -116,7 +119,6 @@ const ROBOTS: RobotFixture[] = [
 		status: "idle",
 		battery_pct: 6,
 		pose: { x_m: 28.6, y_m: 9.3, heading_deg: 135 },
-		last_seen_ago_ms: 1_100,
 		events: [],
 	},
 ];
@@ -139,6 +141,11 @@ function simulatedPose(now: number) {
 }
 
 function toResponse(fixture: RobotFixture, now: number) {
+	const lastSeenAt =
+		fixture.stopped_reporting_ago_ms === undefined
+			? now - REPORT_LAG_MS
+			: STARTED_AT - fixture.stopped_reporting_ago_ms;
+
 	return {
 		robot: {
 			id: fixture.id,
@@ -148,11 +155,11 @@ function toResponse(fixture: RobotFixture, now: number) {
 			status: fixture.status,
 			battery_pct: fixture.battery_pct ?? simulatedBattery(now),
 			pose: fixture.pose ?? simulatedPose(now),
-			last_seen_at: new Date(now - fixture.last_seen_ago_ms).toISOString(),
+			last_seen_at: new Date(lastSeenAt).toISOString(),
 		},
 		events: fixture.events.map((event, index) => ({
 			id: `${fixture.id}-evt-${index}`,
-			timestamp: new Date(now - event.ago_ms).toISOString(),
+			timestamp: new Date(STARTED_AT - event.ago_ms).toISOString(),
 			level: event.level,
 			message: event.message,
 		})),
