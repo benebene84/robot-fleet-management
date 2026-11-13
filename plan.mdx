@@ -89,14 +89,35 @@ Covers:
 - What is left out: auth, multi-tenant sites, i18n, alerting/acknowledgement, historical storage, map tiles.
 - What I would do in production: server push, virtualised tables for large fleets, OpenAPI-generated DTOs, and e2e tests.
 
+## Change of approach: robot detail first
+
+To keep scope small, the first deliverable is one end-to-end slice instead of the full plan above:
+
+- `src/domain/robot/`: robot types plus health rules (battery level, staleness, effective status, attention reasons). The fleet and site domains are dropped for now.
+- `src/mock-backend/robot-backend.ts`: simulates `GET /robots/:id` and returns a real `Response` with snake_case JSON, network latency and a 404.
+- `src/application/robot/`: a zod schema for the backend contract, the mapping into the domain, the `fetchRobotDetail` server function (input validated with `.validator`) and `robotDetailQueryOptions` polling every 2 s.
+- `src/components/pages/robot-detail/` + `src/routes/robots/$robotId.tsx`: the page, plus skeleton, not-found and error states.
+
+The fleet overview, battery history, site map and tests follow after this slice.
+
 ## Todos
 
-- [x] Setup: add zod + vitest, add the shadcn components, remove the starter demo (LocaleSwitcher, home page content)
-- [ ] Domain layer: robot, site and fleet types, plus the pure health and summary rules
-- [ ] Mock telemetry backend: zod schemas for the raw DTOs, plus a deterministic time-based generator with edge cases
-- [ ] Application layer: fleet and robot server functions with zod validation, mappings, queryOptions and hooks
-- [ ] Fleet overview page: summary cards, attention list, filters stored in URL search params, robot table, site map
-- [ ] Robot detail page: header, battery sparkline, position trail, event log, not-found handling
-- [ ] Routes: loader prefetch, validateSearch, pending/error/notFound components
-- [ ] Tests: Vitest for domain rules and mapping/schema validation, then pnpm check + build
+### Done: robot detail slice
+
+- [x] Setup: zod + vitest, shadcn components on Base UI (`base-nova`), starter demo removed
+- [x] Robot domain: types (reported vs. effective status) and health rules (battery level, staleness, attention reasons)
+- [x] Mock backend for `GET /robots/:id`: time-based fixtures with edge cases (error, offline, critical battery, 404)
+- [x] Robot application layer: zod response schema, mapping, `fetchRobotDetail` server function, polling query options
+- [x] Robot detail page: header, attention alerts, battery/position/last-report cards, event log
+- [x] Robot route: loader prefetch, head title, pending/notFound/error components
+
+### Next
+
+- [ ] Tests: Vitest for robot health rules and for the robot mapping/schema validation
+- [ ] Robot detail extras: battery history sparkline and position trail (needs telemetry history in the backend and domain)
+- [ ] Fleet domain: site and fleet types, `summarizeFleet`, `filterRobots`, attention sorting
+- [ ] Fleet mock backend and application layer: `GET /fleet` schema, mapping, server function, query options
+- [ ] Fleet overview page: summary cards, attention list, robot table, site/status filters in URL search params (`validateSearch`), replacing the placeholder links on `/`
+- [ ] Site map: SVG plot of robot positions per site
+- [ ] Final checks: pnpm check, tsc, build, test
 - [ ] README: what I chose, what is faked, trade-offs, what changes in production

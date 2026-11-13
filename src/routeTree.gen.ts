@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RobotsRobotIdRouteImport } from './routes/robots/$robotId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsRobotIdRoute = RobotsRobotIdRouteImport.update({
+  id: '/robots/$robotId',
+  path: '/robots/$robotId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/robots/$robotId': typeof RobotsRobotIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/robots/$robotId': typeof RobotsRobotIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/robots/$robotId': typeof RobotsRobotIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/robots/$robotId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/robots/$robotId'
+  id: '__root__' | '/' | '/robots/$robotId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RobotsRobotIdRoute: typeof RobotsRobotIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots/$robotId': {
+      id: '/robots/$robotId'
+      path: '/robots/$robotId'
+      fullPath: '/robots/$robotId'
+      preLoaderRoute: typeof RobotsRobotIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  RobotsRobotIdRoute: RobotsRobotIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
