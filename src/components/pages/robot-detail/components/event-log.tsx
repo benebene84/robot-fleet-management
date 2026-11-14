@@ -56,7 +56,7 @@ export function EventLog({ events, now }: EventLogProps) {
 									<RelativeTime
 										date={event.occurredAt}
 										now={now}
-										className="shrink-0 text-sm text-muted-foreground"
+										className="w-32 shrink-0 text-right text-sm text-muted-foreground"
 									/>
 								</li>
 							);

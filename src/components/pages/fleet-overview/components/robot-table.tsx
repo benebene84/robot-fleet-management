@@ -40,14 +40,15 @@ export function RobotTable({ robots, now, emptyMessage }: RobotTableProps) {
 	return (
 		<Card className="py-0">
 			{/* Extra padding on the outer columns so the table aligns with the card's edges. */}
-			<Table className="[&_tr>*:first-child]:pl-4 [&_tr>*:last-child]:pr-4">
+			{/* Fixed layout so columns keep their width while live values like "Last report" change. */}
+			<Table className="min-w-3xl table-fixed [&_tr>*:first-child]:pl-4 [&_tr>*:last-child]:pr-4">
 				<TableHeader>
 					<TableRow>
-						<TableHead>Robot</TableHead>
-						<TableHead>Site</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead>Battery</TableHead>
-						<TableHead>Last report</TableHead>
+						<TableHead className="w-[26%]">Robot</TableHead>
+						<TableHead className="w-[22%]">Site</TableHead>
+						<TableHead className="w-[15%]">Status</TableHead>
+						<TableHead className="w-[17%]">Battery</TableHead>
+						<TableHead className="w-[20%]">Last report</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -72,7 +73,9 @@ export function RobotTable({ robots, now, emptyMessage }: RobotTableProps) {
 										/>
 									</div>
 								</TableCell>
-								<TableCell>{robot.site.name}</TableCell>
+								<TableCell className="truncate" title={robot.site.name}>
+									{robot.site.name}
+								</TableCell>
 								<TableCell>
 									<StatusBadge status={getEffectiveStatus(robot, now)} />
 								</TableCell>
