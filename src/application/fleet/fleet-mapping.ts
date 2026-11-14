@@ -4,7 +4,11 @@ import type { FleetResponse } from "./fleet-schema";
 
 export function mapFleetResponse({ sites, robots }: FleetResponse): Fleet {
 	return {
-		sites,
+		sites: sites.map((site) => ({
+			id: site.id,
+			name: site.name,
+			dimensions: { width: site.width_m, height: site.height_m },
+		})),
 		robots: robots.map(mapRobot),
 	};
 }

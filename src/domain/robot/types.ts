@@ -1,4 +1,4 @@
-import type { Site } from "#/domain/site";
+import type { SiteRef } from "#/domain/site";
 
 // What a robot can tell us about itself. A robot cannot report being offline.
 export const REPORTED_STATUSES = {
@@ -32,7 +32,7 @@ export type Robot = {
 	id: string;
 	name: string;
 	model: string;
-	site: Site;
+	site: SiteRef;
 	reportedStatus: ReportedStatus;
 	/** State of charge, 0–100. */
 	battery: number;

@@ -1,8 +1,8 @@
 # Robot Fleet Management UI
 
-Build the fleet-manager UI (fleet overview + robot detail) on the existing TanStack Start starter, following the partner portal's domain / application / components layering. Data comes from a mocked "telemetry backend" behind server functions, validated with zod, mapped into domain types, and polled for a near-live view.
+Build the fleet-manager UI (fleet overview + robot detail) on the existing TanStack Start starter, following a domain / application / components layering. Data comes from a mocked "telemetry backend" behind server functions, validated with zod, mapped into domain types, and polled for a near-live view.
 
-## Architecture (mirrors partners-portal-frontend)
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -14,8 +14,6 @@ flowchart LR
   Domain --> Page
   Route["routes: loader prefetch + validateSearch"] --> Hook
 ```
-
-Conventions to keep from this repo, not the portal: the `#/` import alias, biome double quotes, and tabs.
 
 ## Domain: `src/domain/`
 
@@ -87,18 +85,7 @@ Covers:
 - What is faked: the backend and simulator are replaced by a deterministic server-side mock behind the same server-function boundary, so a real API swap would only touch `application/*-api.ts`.
 - The polling vs SSE/WebSocket trade-off.
 - What is left out: auth, multi-tenant sites, i18n, alerting/acknowledgement, historical storage, map tiles.
-- What I would do in production: server push, virtualised tables for large fleets, OpenAPI-generated DTOs, and e2e tests.
-
-## Change of approach: robot detail first
-
-To keep scope small, the first deliverable is one end-to-end slice instead of the full plan above:
-
-- `src/domain/robot/`: robot types plus health rules (battery level, staleness, effective status, attention reasons). The fleet and site domains are dropped for now.
-- `src/mock-backend/robot-backend.ts`: simulates `GET /robots/:id` and returns a real `Response` with snake_case JSON, network latency and a 404.
-- `src/application/robot/`: a zod schema for the backend contract, the mapping into the domain, the `fetchRobotDetail` server function (input validated with `.validator`) and `robotDetailQueryOptions` polling every 2 s.
-- `src/components/pages/robot-detail/` + `src/routes/robots/$robotId.tsx`: the page, plus skeleton, not-found and error states.
-
-The fleet overview, battery history, site map and tests follow after this slice.
+- What I would do in production: server push, virtualised tables for large fleets, OpenAPI-generated DTOs, and e2e tests. Also mobile consideration (e.g. not rendering a fleet overview table but a more suitable UI that does not involve scrolling)
 
 ## Todos
 
@@ -117,6 +104,6 @@ The fleet overview, battery history, site map and tests follow after this slice.
 
 ### Next
 
-- [ ] Site map: SVG plot of robot positions per site
+- [x] Site map: SVG plot of robot positions per site
 - [ ] Final checks: pnpm check, tsc, build, test
 - [ ] README: what I chose, what is faked, trade-offs, what changes in production

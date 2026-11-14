@@ -35,7 +35,11 @@ const HAMBURG = { id: "site-ham", name: "Hamburg Port Depot" };
 // Newly onboarded, no robots deployed yet.
 const BERLIN = { id: "site-ber", name: "Berlin Fulfilment Center" };
 
-const SITES = [MUNICH, HAMBURG, BERLIN];
+const SITES = [
+	{ ...MUNICH, width_m: 40, height_m: 30 },
+	{ ...HAMBURG, width_m: 50, height_m: 35 },
+	{ ...BERLIN, width_m: 30, height_m: 20 },
+];
 
 const ROBOTS: RobotFixture[] = [
 	{

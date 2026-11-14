@@ -1,21 +1,6 @@
 import type { RobotStatus } from "#/domain/robot";
 import { cn } from "#/lib/utils";
-
-export const STATUS_LABELS: Record<RobotStatus, string> = {
-	active: "Active",
-	idle: "Idle",
-	charging: "Charging",
-	error: "Error",
-	offline: "Offline",
-};
-
-const STATUS_DOT: Record<RobotStatus, string> = {
-	active: "bg-emerald-500",
-	idle: "bg-sky-500",
-	charging: "bg-amber-500",
-	error: "bg-destructive",
-	offline: "bg-muted-foreground",
-};
+import { STATUS_BG, STATUS_LABELS } from "./status-appearance";
 
 type StatusBadgeProps = {
 	status: RobotStatus;
@@ -31,7 +16,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 			)}
 		>
 			<span
-				className={cn("size-2 rounded-full", STATUS_DOT[status])}
+				className={cn("size-2 rounded-full", STATUS_BG[status])}
 				aria-hidden
 			/>
 			{STATUS_LABELS[status]}

@@ -1,4 +1,4 @@
-import { STATUS_LABELS } from "#/components/shared/status-badge";
+import { STATUS_LABELS } from "#/components/shared/status-appearance";
 import {
 	Select,
 	SelectContent,

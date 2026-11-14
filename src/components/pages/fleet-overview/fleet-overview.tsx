@@ -9,6 +9,7 @@ import { useNow } from "#/hooks/use-now";
 import { FleetFilters } from "./components/fleet-filters";
 import { FleetSummaryCards } from "./components/fleet-summary-cards";
 import { RobotTable } from "./components/robot-table";
+import { SiteMap } from "./components/site-map";
 
 type FleetOverviewPageProps = {
 	filter: FleetFilter;
@@ -31,6 +32,12 @@ export function FleetOverviewPage({
 		{ status: filter.status },
 		now,
 	).sort(byAttention(now));
+	// A selected site is always mapped, even when empty; otherwise only sites with matches are.
+	const mappedSites = data.sites.filter((site) =>
+		filter.siteId
+			? site.id === filter.siteId
+			: visibleRobots.some((robot) => robot.site.id === site.id),
+	);
 
 	return (
 		<main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
@@ -47,6 +54,20 @@ export function FleetOverviewPage({
 				statusCounts={summary.byStatus}
 				onFilterChange={onFilterChange}
 			/>
+			{mappedSites.length > 0 && (
+				<section className="grid gap-4 md:grid-cols-2">
+					{mappedSites.map((site) => (
+						<SiteMap
+							key={site.id}
+							site={site}
+							robots={visibleRobots.filter(
+								(robot) => robot.site.id === site.id,
+							)}
+							now={now}
+						/>
+					))}
+				</section>
+			)}
 			<RobotTable
 				robots={visibleRobots}
 				now={now}
