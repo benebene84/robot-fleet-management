@@ -1,3 +1,3 @@
-// All formatting uses one fixed locale. Falling back to the runtime default would format
-// differently on the server and in the browser and break hydration.
+// The UI is English only, so numbers and dates are formatted to match it rather than
+// following the browser's locale.
 export const APP_LOCALE = "en";

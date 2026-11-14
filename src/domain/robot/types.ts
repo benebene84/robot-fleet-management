@@ -1,3 +1,5 @@
+import type { Site } from "#/domain/site";
+
 // What a robot can tell us about itself. A robot cannot report being offline.
 export const REPORTED_STATUSES = {
 	active: "active",
@@ -16,6 +18,7 @@ export const ROBOT_STATUSES = {
 } as const;
 
 export type RobotStatus = (typeof ROBOT_STATUSES)[keyof typeof ROBOT_STATUSES];
+export const allRobotStatuses = Object.values(ROBOT_STATUSES);
 
 export type Position = {
 	/** Metres from the site origin. */
@@ -29,7 +32,7 @@ export type Robot = {
 	id: string;
 	name: string;
 	model: string;
-	siteName: string;
+	site: Site;
 	reportedStatus: ReportedStatus;
 	/** State of charge, 0–100. */
 	battery: number;

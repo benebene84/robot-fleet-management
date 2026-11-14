@@ -32,12 +32,10 @@ type RelativeTimeProps = {
 
 export function RelativeTime({ date, now, className }: RelativeTimeProps) {
 	return (
-		// Server and client render at slightly different times so we suppress the hydratio wWarning
 		<time
 			dateTime={date.toISOString()}
 			title={absoluteFormat.format(date)}
 			className={className}
-			suppressHydrationWarning
 		>
 			{formatRelative(date, now)}
 		</time>

@@ -32,6 +32,10 @@ const STARTED_AT = Date.now();
 
 const MUNICH = { id: "site-muc", name: "Munich Warehouse" };
 const HAMBURG = { id: "site-ham", name: "Hamburg Port Depot" };
+// Newly onboarded, no robots deployed yet.
+const BERLIN = { id: "site-ber", name: "Berlin Fulfilment Center" };
+
+const SITES = [MUNICH, HAMBURG, BERLIN];
 
 const ROBOTS: RobotFixture[] = [
 	{
@@ -121,6 +125,48 @@ const ROBOTS: RobotFixture[] = [
 		pose: { x_m: 28.6, y_m: 9.3, heading_deg: 135 },
 		events: [],
 	},
+	{
+		id: "rb-006",
+		name: "Flux",
+		model: "AMR-200",
+		site: MUNICH,
+		status: "active",
+		battery_pct: 58,
+		pose: { x_m: 33.1, y_m: 22.4, heading_deg: 270 },
+		events: [
+			{
+				ago_ms: 9 * MINUTE,
+				level: "info",
+				message: "Started mission: pallet transfer",
+			},
+		],
+	},
+	{
+		id: "rb-007",
+		name: "Gizmo",
+		model: "AMR-350",
+		site: HAMBURG,
+		status: "idle",
+		battery_pct: 91,
+		pose: { x_m: 5.2, y_m: 3.8, heading_deg: 180 },
+		events: [],
+	},
+	{
+		id: "rb-008",
+		name: "Halo",
+		model: "AMR-350",
+		site: HAMBURG,
+		status: "charging",
+		battery_pct: 46,
+		pose: { x_m: 1.5, y_m: 2, heading_deg: 90 },
+		events: [
+			{
+				ago_ms: 3 * MINUTE,
+				level: "info",
+				message: "Docked at charging station 2",
+			},
+		],
+	},
 ];
 
 // Drains from 100% to 20% over 48 minutes, then starts over.
@@ -140,23 +186,27 @@ function simulatedPose(now: number) {
 	};
 }
 
-function toResponse(fixture: RobotFixture, now: number) {
+function toRobotDto(fixture: RobotFixture, now: number) {
 	const lastSeenAt =
 		fixture.stopped_reporting_ago_ms === undefined
 			? now - REPORT_LAG_MS
 			: STARTED_AT - fixture.stopped_reporting_ago_ms;
 
 	return {
-		robot: {
-			id: fixture.id,
-			name: fixture.name,
-			model: fixture.model,
-			site: fixture.site,
-			status: fixture.status,
-			battery_pct: fixture.battery_pct ?? simulatedBattery(now),
-			pose: fixture.pose ?? simulatedPose(now),
-			last_seen_at: new Date(lastSeenAt).toISOString(),
-		},
+		id: fixture.id,
+		name: fixture.name,
+		model: fixture.model,
+		site: fixture.site,
+		status: fixture.status,
+		battery_pct: fixture.battery_pct ?? simulatedBattery(now),
+		pose: fixture.pose ?? simulatedPose(now),
+		last_seen_at: new Date(lastSeenAt).toISOString(),
+	};
+}
+
+function toRobotDetailDto(fixture: RobotFixture, now: number) {
+	return {
+		robot: toRobotDto(fixture, now),
 		events: fixture.events.map((event, index) => ({
 			id: `${fixture.id}-evt-${index}`,
 			timestamp: new Date(STARTED_AT - event.ago_ms).toISOString(),
@@ -166,12 +216,26 @@ function toResponse(fixture: RobotFixture, now: number) {
 	};
 }
 
-/** Simulates `GET /robots/:id`, including network latency and a 404 for unknown robots. */
+function simulateLatency(latency = 150) {
+	return new Promise((resolve) => setTimeout(resolve, latency));
+}
+
+/** Simulates `GET /robots`: every site and the current state of every robot. */
+export async function getFleet(): Promise<Response> {
+	await simulateLatency();
+	const now = Date.now();
+	return Response.json({
+		sites: SITES,
+		robots: ROBOTS.map((fixture) => toRobotDto(fixture, now)),
+	});
+}
+
+/** Simulates `GET /robots/:id`, including a 404 for unknown robots. */
 export async function getRobotDetail(robotId: string): Promise<Response> {
-	await new Promise((resolve) => setTimeout(resolve, 150));
+	await simulateLatency();
 	const fixture = ROBOTS.find((robot) => robot.id === robotId);
 	if (!fixture) {
 		return Response.json({ message: "Robot not found" }, { status: 404 });
 	}
-	return Response.json(toResponse(fixture, Date.now()));
+	return Response.json(toRobotDetailDto(fixture, Date.now()));
 }

@@ -111,12 +111,12 @@ The fleet overview, battery history, site map and tests follow after this slice.
 - [x] Robot detail page: header, attention alerts, battery/position/last-report cards, event log
 - [x] Robot route: loader prefetch, head title, pending/notFound/error components
 - [x] Tests: Vitest for robot health rules, and the robot mapping/schema validation
+- [x] Fleet domain: site and fleet types, `summarizeFleet`, `filterRobots`, `byAttention` sorting (with tests)
+- [x] Fleet mock backend and application layer: `GET /robots` schema (shares the robot schema and mapping with the detail endpoint), server function, query options
+- [x] Fleet overview page: summary cards, robot table sorted by attention, site/status filters in URL search params (`validateSearch`), replacing the placeholder links on `/`
 
 ### Next
 
-- [ ] Fleet domain: site and fleet types, `summarizeFleet`, `filterRobots`, attention sorting
-- [ ] Fleet mock backend and application layer: `GET /fleet` schema, mapping, server function, query options
-- [ ] Fleet overview page: summary cards, attention list, robot table, site/status filters in URL search params (`validateSearch`), replacing the placeholder links on `/`
 - [ ] Site map: SVG plot of robot positions per site
 - [ ] Final checks: pnpm check, tsc, build, test
 - [ ] README: what I chose, what is faked, trade-offs, what changes in production

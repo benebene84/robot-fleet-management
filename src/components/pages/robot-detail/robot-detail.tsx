@@ -37,7 +37,7 @@ export function RobotDetailPage({ robotId }: RobotDetailPageProps) {
 					level={getBatteryLevel(robot.battery)}
 					isCharging={robot.reportedStatus === "charging"}
 				/>
-				<PositionCard position={robot.position} siteName={robot.siteName} />
+				<PositionCard position={robot.position} siteName={robot.site.name} />
 				<LastSeenCard
 					lastSeenAt={robot.lastSeenAt}
 					now={now}

@@ -84,7 +84,7 @@ describe("mapRobotDetailResponse", () => {
 			id: "rb-001",
 			name: "Atlas",
 			model: "AMR-200",
-			siteName: "Munich Warehouse",
+			site: { id: "site-muc", name: "Munich Warehouse" },
 			reportedStatus: "active",
 			battery: 72.5,
 			position: { x: 12.3, y: 4.5, heading: 90 },

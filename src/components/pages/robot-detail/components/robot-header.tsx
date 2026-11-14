@@ -23,7 +23,7 @@ export function RobotHeader({ robot, status }: RobotHeaderProps) {
 				<StatusBadge status={status} />
 			</div>
 			<p className="text-sm text-muted-foreground">
-				{robot.id} · {robot.model} · {robot.siteName}
+				{robot.id} · {robot.model} · {robot.site.name}
 			</p>
 		</header>
 	);

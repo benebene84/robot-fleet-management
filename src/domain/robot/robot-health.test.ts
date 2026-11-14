@@ -19,7 +19,7 @@ function buildRobot(overrides: Partial<Robot> = {}): Robot {
 		id: "rb-test",
 		name: "Test",
 		model: "AMR-200",
-		siteName: "Test Site",
+		site: { id: "site-test", name: "Test Site" },
 		reportedStatus: "active",
 		battery: 80,
 		position: { x: 0, y: 0, heading: 0 },

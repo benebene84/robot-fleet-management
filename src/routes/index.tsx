@@ -1,35 +1,42 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { fleetQueryOptions } from "#/application/fleet";
+import { RouteError } from "#/components/error/route-error";
+import { FleetOverviewPage } from "#/components/pages/fleet-overview/fleet-overview";
+import { FleetOverviewSkeleton } from "#/components/pages/fleet-overview/fleet-overview-skeleton";
+import type { FleetFilter } from "#/domain/fleet";
+import { ROBOT_STATUSES } from "#/domain/robot";
 
-export const Route = createFileRoute("/")({ component: FleetOverviewPage });
+// Invalid values (e.g. from a hand-edited URL) fall back to "no filter" instead of erroring.
+const fleetSearchSchema = z.object({
+	site: z.string().optional().catch(undefined),
+	status: z.enum(ROBOT_STATUSES).optional().catch(undefined),
+});
 
-// Placeholder until the fleet overview exists: one link per mock scenario.
-const EXAMPLE_ROBOTS = [
-	{ id: "rb-001", scenario: "Active, moving, battery draining" },
-	{ id: "rb-002", scenario: "Charging with critical battery" },
-	{ id: "rb-003", scenario: "Error" },
-	{ id: "rb-004", scenario: "Offline (stale telemetry)" },
-	{ id: "rb-005", scenario: "Idle with critical battery" },
-	{ id: "rb-999", scenario: "Unknown robot (404)" },
-];
+export const Route = createFileRoute("/")({
+	validateSearch: fleetSearchSchema,
+	loader: ({ context }) =>
+		context.queryClient.query({ ...fleetQueryOptions, staleTime: "static" }),
+	head: () => ({ meta: [{ title: "Fleet · Robot Fleet Management" }] }),
+	component: RouteComponent,
+	pendingComponent: FleetOverviewSkeleton,
+	errorComponent: RouteError,
+});
 
-function FleetOverviewPage() {
+function RouteComponent() {
+	const { site, status } = Route.useSearch();
+	const navigate = Route.useNavigate();
+
+	const handleFilterChange = (filter: FleetFilter) =>
+		navigate({
+			search: { site: filter.siteId, status: filter.status },
+			replace: true,
+		});
+
 	return (
-		<main className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-6">
-			<h1 className="text-2xl font-semibold tracking-tight">Fleet</h1>
-			<ul className="flex flex-col gap-2">
-				{EXAMPLE_ROBOTS.map(({ id, scenario }) => (
-					<li key={id}>
-						<Link
-							to="/robots/$robotId"
-							params={{ robotId: id }}
-							className="underline underline-offset-4"
-						>
-							{id}
-						</Link>
-						<span className="text-muted-foreground"> · {scenario}</span>
-					</li>
-				))}
-			</ul>
-		</main>
+		<FleetOverviewPage
+			filter={{ siteId: site, status }}
+			onFilterChange={handleFilterChange}
+		/>
 	);
 }

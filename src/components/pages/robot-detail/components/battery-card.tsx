@@ -1,30 +1,10 @@
 import { BatteryChargingIcon, BatteryIcon } from "lucide-react";
+import { BATTERY_LEVEL_APPEARANCE } from "#/components/shared/battery-appearance";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Progress } from "#/components/ui/progress";
 import { APP_LOCALE } from "#/constants/locale";
 import type { BatteryLevel } from "#/domain/robot";
 import { cn } from "#/lib/utils";
-
-const LEVEL_APPEARANCE: Record<
-	BatteryLevel,
-	{ label: string; text: string; indicator: string }
-> = {
-	ok: {
-		label: "Healthy",
-		text: "text-muted-foreground",
-		indicator: "[&_[data-slot=progress-indicator]]:bg-emerald-500",
-	},
-	low: {
-		label: "Low",
-		text: "text-amber-600",
-		indicator: "[&_[data-slot=progress-indicator]]:bg-amber-500",
-	},
-	critical: {
-		label: "Critical",
-		text: "text-destructive",
-		indicator: "[&_[data-slot=progress-indicator]]:bg-destructive",
-	},
-};
 
 type BatteryCardProps = {
 	battery: number;
@@ -33,7 +13,7 @@ type BatteryCardProps = {
 };
 
 export function BatteryCard({ battery, level, isCharging }: BatteryCardProps) {
-	const { label, text, indicator } = LEVEL_APPEARANCE[level];
+	const { label, text, indicator } = BATTERY_LEVEL_APPEARANCE[level];
 	const Icon = isCharging ? BatteryChargingIcon : BatteryIcon;
 
 	return (
