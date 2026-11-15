@@ -91,6 +91,7 @@ export function SiteMap({ site, robots, now }: SiteMapProps) {
 								key={robot.id}
 								to="/robots/$robotId"
 								params={{ robotId: robot.id }}
+								search={(prev) => prev}
 								className="outline-none focus-visible:[&_circle]:stroke-ring"
 							>
 								<title>{`${robot.name} · ${STATUS_LABELS[status]}`}</title>

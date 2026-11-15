@@ -63,6 +63,7 @@ export function RobotTable({ robots, now, emptyMessage }: RobotTableProps) {
 										<Link
 											to="/robots/$robotId"
 											params={{ robotId: robot.id }}
+											search={(prev) => prev}
 											className="font-medium hover:underline"
 										>
 											{robot.name}

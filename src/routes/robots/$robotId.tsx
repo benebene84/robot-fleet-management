@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { fleetSearchSchema } from "#/application/fleet";
 import { robotDetailQueryOptions } from "#/application/robot";
 import { RouteError } from "#/components/error/route-error";
 import { RobotDetailPage } from "#/components/pages/robot-detail/robot-detail";
@@ -6,6 +7,7 @@ import { RobotDetailSkeleton } from "#/components/pages/robot-detail/robot-detai
 import { RobotNotFound } from "#/components/pages/robot-detail/robot-not-found";
 
 export const Route = createFileRoute("/robots/$robotId")({
+	validateSearch: fleetSearchSchema,
 	loader: ({ context, params }) =>
 		context.queryClient.query({
 			...robotDetailQueryOptions(params.robotId),
@@ -28,5 +30,6 @@ export const Route = createFileRoute("/robots/$robotId")({
 
 function RouteComponent() {
 	const { robotId } = Route.useParams();
-	return <RobotDetailPage robotId={robotId} />;
+	const fleetSearch = Route.useSearch();
+	return <RobotDetailPage robotId={robotId} fleetSearch={fleetSearch} />;
 }

@@ -1,3 +1,4 @@
+import type { FleetSearch } from "#/application/fleet";
 import { useRobotDetail } from "#/application/robot";
 import {
 	getAttentionReasons,
@@ -15,16 +16,24 @@ import { RobotHeader } from "./components/robot-header";
 
 type RobotDetailPageProps = {
 	robotId: string;
+	fleetSearch: FleetSearch;
 };
 
-export function RobotDetailPage({ robotId }: RobotDetailPageProps) {
+export function RobotDetailPage({
+	robotId,
+	fleetSearch,
+}: RobotDetailPageProps) {
 	const { data, isRefetchError } = useRobotDetail(robotId);
 	const now = useNow();
 	const { robot, events } = data;
 
 	return (
 		<main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
-			<RobotHeader robot={robot} status={getEffectiveStatus(robot, now)} />
+			<RobotHeader
+				robot={robot}
+				status={getEffectiveStatus(robot, now)}
+				fleetSearch={fleetSearch}
+			/>
 			{isRefetchError && (
 				<output className="text-sm text-muted-foreground">
 					Lost connection to the server. Showing the last data received.
