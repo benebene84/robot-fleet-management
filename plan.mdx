@@ -89,7 +89,7 @@ Covers:
 
 ## Todos
 
-### Done: robot detail slice
+### Done
 
 - [x] Setup: zod + vitest, shadcn components on Base UI (`base-nova`), starter demo removed
 - [x] Robot domain: types (reported vs. effective status) and health rules (battery level, staleness, attention reasons)
@@ -101,9 +101,6 @@ Covers:
 - [x] Fleet domain: site and fleet types, `summarizeFleet`, `filterRobots`, `byAttention` sorting (with tests)
 - [x] Fleet mock backend and application layer: `GET /robots` schema (shares the robot schema and mapping with the detail endpoint), server function, query options
 - [x] Fleet overview page: summary cards, robot table sorted by attention, site/status filters in URL search params (`validateSearch`), replacing the placeholder links on `/`
-
-### Next
-
 - [x] Site map: SVG plot of robot positions per site
-- [ ] Final checks: pnpm check, tsc, build, test
-- [ ] README: what I chose, what is faked, trade-offs, what changes in production
+- [x] Final checks: pnpm check, tsc, build, test
+- [x] README: what I chose, what is faked, trade-offs, what changes in production

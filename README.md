@@ -1,226 +1,127 @@
-Welcome to your new TanStack Start app!
+# Robot Fleet Management
 
-# Getting Started
+A fleet manager's view of a robot fleet: what the whole fleet is doing right now, which robots need attention, where they are, and the details of a single robot.
 
-To run this application:
+## Getting started
+
+Runs on node v24.22.3 - a `.nvmrc` file is provided for your convenience:
 
 ```bash
+nvm install 
+corepack enable
 pnpm install
-pnpm dev
+pnpm dev        # http://localhost:3000
 ```
 
-# Building For Production
-
-To build this application for production:
+Other scripts:
 
 ```bash
-pnpm build
+pnpm test       # Vitest unit tests
+pnpm check      # Biome lint + format check
+pnpm build      # production build (Nitro server in .output/)
 ```
 
-## Styling
+There is nothing to configure: the backend is mocked inside the app.
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+### Docker
 
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
+The `Dockerfile` builds the app in several stages and runs the production server as a non-root user:
 
 ```bash
-pnpm lint
-pnpm format
-pnpm check
+docker build -t robot-fleet-management .
+docker run --rm -p 3000:3000 robot-fleet-management
 ```
 
+The app is then available at http://localhost:3000.
 
-## Deploy with Nitro
+## What I chose to build, and why
 
-This project uses Nitro as a generic server adapter, so it can run on any Node-compatible host.
+I focused on the **user interface**. That is where I want to show what I am good at: turning raw telemetry into something a person can act on quickly, on a codebase that is structured so it stays easy to change.
 
-```bash
-npm run build
-node .output/server/index.mjs
+I started from the question a fleet manager opens this screen with: *"Is anything wrong, and where?"* That shaped the features:
+
+- **Fleet overview** (`/`)
+  - Summary cards: robots, robots needing attention, active robots, average battery.
+  - Site and status filters, stored in the URL so a filtered view can be shared or bookmarked.
+  - A **site map** per site, showing robot positions to scale, their heading, and a red ring around robots that need attention.
+  - A table of all robots, **sorted by attention** (errors first, then offline, then critical battery), with a warning icon whose tooltip explains why.
+- **Robot detail** (`/robots/:id`)
+  - Attention alerts that say what is wrong and what it means.
+  - Cards for battery, position and heading, and last report.
+  - A log of recent events.
+- **Near-live data**
+  - Both pages poll every 5 seconds.
+  - Between polls the page re-evaluates time-based state every second, so "last report" counts up and a robot that stops reporting turns *offline* without waiting for the next request.
+- **The states that real data produces**
+  - Loading skeletons, a "robot not found" page, an error page with retry.
+  - A "lost connection, showing last data" notice when a poll fails, empty states for sites without robots, and invalid URL filters that are dropped instead of erroring.
+- **Polish:** a system / light / dark theme switcher (no flash of the wrong theme on load), view transitions between pages, and a stable table layout that does not jump while values update.
+
+## Architecture
+
+The code is split into layers with a clear direction of dependency:
+
+```mermaid
+flowchart LR
+  Backend["mock-backend: raw JSON over Response"] --> ServerFn["application: server function + zod validation"]
+  ServerFn --> Mapping["application: mapping to domain types"]
+  Mapping --> Query["application: query options (polling)"]
+  Query --> Page["components: pages and display components"]
+  Domain["domain: types + pure business rules"] --> Mapping
+  Domain --> Page
+  Route["routes: loader prefetch, search params"] --> Query
 ```
 
-The build output is a self-contained Node server. To deploy, push the `.output/` directory to your host (Render, Fly.io, your own VPS, etc.) and run the server command above.
+Decisions worth calling out:
 
-For host-specific presets (Vercel, Netlify, Cloudflare, AWS Lambda, etc.) and tuning, see https://v3.nitro.build/deploy.
+- **Reported status vs. effective status.** A robot can report `active`, `idle`, `charging` or `error`, but it can never report being offline. *Offline* is something we infer when telemetry has been missing for more than 10 seconds, about ten missed reports. The domain keeps these two concepts apart, and everything the user sees uses the effective status. A robot whose last report was an error, but which has since gone silent, is shown as offline: its last known error state can no longer be trusted.
+- **Time is a parameter.** Every rule that depends on time (`isStale`, `getEffectiveStatus`, `getAttentionReasons`, `summarizeFleet`, …) takes `now` as an argument. The rules stay deterministic and trivial to test, and the UI can re-evaluate them every second without refetching.
+- **The trust boundary is the server function.** The mock backend deliberately speaks its own language: snake_case fields, ISO timestamps, `warn` instead of `warning`. It returns a real `Response` with a status code, including a 404. The server function:
+  1. Validates the robot id it receives.
+  2. Turns a 404 into a "not found" page.
+  3. Parses the body with zod, logging and throwing if it does not match the contract.
+  4. Maps the result into domain types.
 
+  Nothing unvalidated or backend-shaped reaches a component.
+- **Filtering happens in the browser.** Whether a robot counts as "offline" depends on the current time, so the server cannot filter by status once and be correct a second later. At this fleet size, loading the whole fleet and filtering with the domain's `filterRobots` is simpler and always correct.
+- **Summary cards follow only the site filter.** Choosing "Offline" filters the table and maps, but the cards keep showing the whole site, so the manager does not lose context.
+- **Server rendering loads data only** (`ssr: "data-only"`). Route loaders prefetch data on the server, but pages render in the browser. This view is all live, time-relative values ("3 seconds ago"), which would always differ between server and browser render and cause hydration mismatches. Server-rendered HTML is worth little for an internal tool behind a login.
 
-# Paraglide i18n
+## What I faked or left out, and why
 
-This add-on wires up ParaglideJS for localized routing and message formatting.
+**Faked**
 
-- Messages live in `project.inlang/messages`.
-- URLs are localized through the Paraglide Vite plugin and router `rewrite` hooks.
-- Run the dev server or build to regenerate the `src/paraglide` outputs.
+- **The robot simulator and the backend.** `src/mock-backend/robot-backend.ts` holds eight robots across three sites. Values are derived from the current time: one robot drives a loop with a draining battery, and past events are anchored to when the server started, so they age naturally. It covers the edge cases on purpose: a robot in error, one that went silent, one with a critical battery that is not charging, one with a critical battery that *is* charging (not flagged), and a site with no robots. It sits behind the same `Response` + validation boundary a real API would, so replacing it means changing one call per server function.
 
+**Left out**
 
-## Shadcn
+- **Authentication, users, multi-tenancy.** Necessary in production, but they would not show anything interesting about this problem.
+- **Ingestion and storage.** Out of scope for a UI focus.
+- **History.** No battery chart or position trail on the detail page; that needs a time-series backend I chose not to fake.
+- **Alerting and acknowledgement.** A manager cannot yet mark an issue as "seen" or assign it.
+- **Internationalisation.** The UI is English only, and all number and date formatting uses one fixed locale (`APP_LOCALE`).
+- **Real floor plans.** The site map is a scaled grid, rendered as an svg, not a map of the actual building.
 
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+## Trade-offs
 
-```bash
-pnpm dlx shadcn@latest add button
-```
+- **Polling instead of server push.** A 5 second poll is simple, robust (the query layer handles retries, background tabs and stale data) and good enough for a manager's view. Robots report about once per second, so a truly live view would use SSE or WebSockets. Because time-based state is re-evaluated every second in the browser, the most important signal (a robot going offline) shows up promptly even with polling.
+- **Loading the whole fleet in one request.** Fine for dozens of robots, not for thousands (see below).
+- **Mock state lives in memory.** Restarting the dev server resets event times. Acceptable for a mock.
 
+## What I would do differently in production or with more time
 
+- **Server push** (SSE or WebSockets) for telemetry, keeping the query cache as the single place data lives in the browser.
+- **Scale for large fleets:**
+  - Server-side pagination, sorting and filtering, with the backend computing effective status from a shared definition of "stale".
+  - Virtualised tables.
+  - A summary endpoint, so the cards do not need every robot.
+- **Generated API types** from an OpenAPI spec, with zod schemas generated from them, so the contract has one source of truth.
+- **More tests:** component tests for the display logic, and end-to-end tests (Playwright) for the main flows: filtering, opening a robot, offline and error states.
+- **A mobile layout.** A fleet table that scrolls sideways is a poor fit for a phone; I would show the robots needing attention as cards first, with the full list secondary.
+- **Robot history and alert workflows:** battery and position history, acknowledging and assigning issues, notifications.
+- **Accessibility and dark mode review.** Check contrast of the status colours on dark backgrounds, and run an audit with assistive technology.
+- **Observability:** send the validation and fetch errors that are currently logged to error monitoring, so a backend contract change is noticed immediately.
 
-## Routing
+## Tech stack
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+[TanStack Start](https://tanstack.com/start) (router, server functions, Nitro), [TanStack Query](https://tanstack.com/query), [zod](https://zod.dev), [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com), [Tailwind CSS](https://tailwindcss.com) v4, [Vitest](https://vitest.dev), [Biome](https://biomejs.dev).

@@ -1,0 +1,12 @@
+node_modules
+.output
+.nitro
+.tanstack
+.vinxi
+dist
+dist-ssr
+.git
+.github
+.claude
+.env
+*.local
